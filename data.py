@@ -39,7 +39,8 @@ def array_from_file(root, filename, base_url=_default_root_url) -> np.ndarray:
     return np.loadtxt(file_path)
 
 
-def load(root, train=True, download=True, one_khz=False, nhwc=False):
+def load(root, train=True, download=True, one_khz=False, nhwc=False, 
+         normalize=False):
     """
     Args:
 
@@ -58,11 +59,14 @@ def load(root, train=True, download=True, one_khz=False, nhwc=False):
             nhwc (Batch, Height, Width, Chanel) which is the convention in
             Tensorflow, otherwise, BCHW is used, which is the convention in
             Pytorch. Default is False (Pytorch).
+            
+        normalize (bool, optional): If True, the input is normalize accross 
+            each channel using the training data. 
     """
 
     nb_electrodes = 28
 
-    if train:
+    if train or normalize:
 
         if one_khz:
             dataset = array_from_file(root, 'sp1s_aa_train_1000Hz.txt')
@@ -71,6 +75,11 @@ def load(root, train=True, download=True, one_khz=False, nhwc=False):
 
         input = dataset[:, 1:].reshape(dataset.shape[0], nb_electrodes, -1)
         target = dataset[:, 0]
+        
+        # Training data mean and std on a per channel basis, used for 
+        # normalization later
+        mean = np.mean(input, axis=(0,2)).reshape(1, -1, 1);
+        std = np.std(input, axis=(0,2)).reshape(1, -1, 1);
 
     else:
 
@@ -81,6 +90,10 @@ def load(root, train=True, download=True, one_khz=False, nhwc=False):
         target = array_from_file(root, 'labels_data_set_iv.txt')
 
         input = input.reshape(input.shape[0], nb_electrodes, -1)
+
+    if normalize:
+        input = input - mean;
+        input = input/std;
 
     if nhwc:
         input = input.swapaxes(1, 2)
