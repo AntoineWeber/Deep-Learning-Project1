@@ -25,27 +25,27 @@ def create_model():
                      input_shape=(nb_datapoints, nb_electrodes),
                      filters=32,
                      activation='relu'))
-    #model.add(Dropout(rate=0.5, noise_shape=(None,1,None)))
+    # model.add(Dropout(rate=0.5, noise_shape=(None,1,None)))
     model.add(Conv1D(kernel_size=3, filters=32, activation='relu'))
-    #model.add(Dropout(rate=0.5, noise_shape=(None,1,None)))
+    # model.add(Dropout(rate=0.5, noise_shape=(None,1,None)))
     model.add(MaxPooling1D(pool_size=2))
     
     model.add(Conv1D(kernel_size=3, filters=64, activation='relu'))
-    #model.add(Dropout(rate=0.5, noise_shape=(None,1,None)))
+    # model.add(Dropout(rate=0.5, noise_shape=(None,1,None)))
     model.add(Conv1D(kernel_size=3, filters=64, activation='relu'))
-    #model.add(Dropout(rate=0.5, noise_shape=(None,1,None)))
+    # model.add(Dropout(rate=0.5, noise_shape=(None,1,None)))
     model.add(MaxPooling1D(pool_size=2))
     
     model.add(Conv1D(kernel_size=3, filters=128, activation='relu'))
-    #model.add(Dropout(rate=0.5, noise_shape=(None,1,None)))
+    # model.add(Dropout(rate=0.5, noise_shape=(None,1,None)))
     model.add(Conv1D(kernel_size=3, filters=128, activation='relu'))
-    #model.add(Dropout(rate=0.5, noise_shape=(None,1,None)))
+    # model.add(Dropout(rate=0.5, noise_shape=(None,1,None)))
     model.add(MaxPooling1D(pool_size=2))
     
     model.add(Conv1D(kernel_size=3, filters=256, activation='relu'))
-    #model.add(Dropout(rate=0.5, noise_shape=(None,1,None)))
+    # model.add(Dropout(rate=0.5, noise_shape=(None,1,None)))
     model.add(Conv1D(kernel_size=3, filters=256, activation='relu'))
-    #model.add(Dropout(rate=0.5, noise_shape=(None,1,None)))
+    # model.add(Dropout(rate=0.5, noise_shape=(None,1,None)))
     model.add(MaxPooling1D(pool_size=2))
     
     model.add(Flatten())
@@ -54,9 +54,9 @@ def create_model():
     model.add(Dense(units=100, activation='relu'))
     model.add(Dropout(rate=0.5))
     model.add(Dense(units=2, activation='softmax'))
-    
-    #model.summary()
-    
+
+    model.summary()
+
     return model
 
 
@@ -74,8 +74,8 @@ model.compile(loss='sparse_categorical_crossentropy',
 
 model.fit(x=train_input,
           y=np.expand_dims(train_target, -1),
-          validation_split=0.2,
-          batch_size=32,
+          # validation_split=0.2,
+          batch_size=64,
           epochs=100)
 
 # Save model after training
