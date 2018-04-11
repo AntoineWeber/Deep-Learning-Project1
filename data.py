@@ -81,7 +81,7 @@ def load(root, train=True, download=True, one_khz=False, nhwc=False,
         mean = np.mean(input, axis=(0,2)).reshape(1, -1, 1);
         std = np.std(input, axis=(0,2)).reshape(1, -1, 1);
 
-    else:
+    if not train:
 
         if one_khz:
             input = array_from_file(root, 'sp1s_aa_test_1000Hz.txt')
