@@ -43,6 +43,12 @@ class Flatten(nn.Module):
     def forward(self,input):
         return input.view(input.size(0), -1)
 
+# Function used to create the 1Linear model
+def create_model_1linear():
+    return nn.Sequential(
+                         Flatten(),
+                         nn.Linear(14000,2),
+                         nn.Softmax(dim=1))
 
 # Definition of our architecture
 def create_model_1d():
@@ -64,8 +70,10 @@ def create_model_1d():
         nn.Softmax(dim=1))
 
 
+
 # Function to train the model
 def train_model(model, train_data, train_labels, test_data, test_labels, mini_batch_size, verbose=True):
+    model.train()
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
     nb_epochs = 100
@@ -79,12 +87,10 @@ def train_model(model, train_data, train_labels, test_data, test_labels, mini_ba
         # adjust the LR after a given number of epochs
         if e == 40:
             optimizer = torch.optim.Adam(model.parameters(), lr=1e-5)
-            
+        
         if e == 70:
             optimizer = torch.optim.Adam(model.parameters(), lr=1e-6)
             
-            
-        
         for b in range(math.ceil(train_input.size(0)/mini_batch_size)):
             # Implementation using a mini_batch_size
             # if there is at least the number mini_batch_isze of left samples
@@ -103,15 +109,16 @@ def train_model(model, train_data, train_labels, test_data, test_labels, mini_ba
         if verbose:
             model.eval()
             output = model(train_input)
-            model.train()
             trainloss.append(float(criterion(output, train_target)))
             err_train.append(compute_nb_errors(model, train_data, train_labels, mini_batch_size))
             err_test.append(compute_nb_errors(model, test_data, test_labels, mini_batch_size))
+            model.train()
             print('Epoch number {}/{} finished. Train accuracy : {:0.2f}%, Test accuracy : {:0.2f}% with a train loss = {:0.5f}'.format(e+1, nb_epochs,
                                                                                                             100-(100*err_train[e]/train_data.size(0)),
                                                                                                             100-(100*err_test[e]/test_data.size(0)),
                                                                                                             trainloss[e]))
     if verbose:
+        print('Plotting Accuracy and Loss curves...')
         acc_train = 100-(100*np.divide(err_train,train_data.size(0)))
         acc_test = 100-(100*np.divide(err_test,test_data.size(0)))
         plt.figure(0)
@@ -150,15 +157,14 @@ def compute_nb_errors(model, data_input, data_target, mini_batch_size):
             for k in range(0,data_input.size(0)%mini_batch_size):
                 if data_target.data[b*mini_batch_size + k] != predicted_classes[k]:
                     nb_data_errors = nb_data_errors + 1
-        
 
     return nb_data_errors
 
 
+
 model = create_model_1d()
-# best results obtained with a batch_size of 40
-mini_batch_size = 40
-model.train()
+# best results obtained with a batch_size of 32
+mini_batch_size = 32
 print('Training the model...')
 train_model(model, train_input, train_target, test_input, test_target,mini_batch_size, verbose=True)
 print('Model trained. Computing error rate...')
@@ -179,6 +185,7 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 import sklearn
 from scipy.signal import butter, lfilter
 
+# You should define fs to be 100Hz or 1kHz depending on the used dataset
 def preprocess_signal(train_input, test_input, train_target, test_target, fs):
     train_data = train_input.data.numpy()
     test_data = test_input.data.numpy()
