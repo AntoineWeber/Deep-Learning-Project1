@@ -25,7 +25,7 @@ train_std = train_input.std(dim=2).mean(dim=0).expand(train_input.size(2),train_
 # Center and reduce the train input data
 train_input = train_input.sub_(train_moy).div(train_std)
 
-# Center and reduce the test input data using the test mean and std
+# Center and normalize the test input data using the test mean and std
 test_moy = test_input.mean(dim=2).mean(dim=0).expand(test_input.size(2),test_input.size(0),test_input.size(1)).transpose(0,1).transpose(1,2)
 test_std = test_input.std(dim=2).mean(dim=0).expand(test_input.size(2),test_input.size(0),test_input.size(1)).transpose(0,1).transpose(1,2)
 test_input = test_input.sub_(test_moy).div(test_std)
@@ -51,7 +51,7 @@ def create_model_1linear():
          nn.Softmax(dim=1))
 
 # Definition of our architecture
-def create_model_1d():
+def create_final_model():
     return nn.Sequential(
         nn.Conv1d(in_channels = nb_channels, out_channels = 28, kernel_size = (5),stride=5),
         nn.SELU(),
@@ -93,7 +93,7 @@ def train_model(model, train_data, train_labels, test_data, test_labels, mini_ba
             
         for b in range(math.ceil(train_input.size(0)/mini_batch_size)):
             # Implementation using a mini_batch_size
-            # if there is at least the number mini_batch_isze of left samples
+            # if there is at least the number mini_batch_size of left samples
             if ((b+1)*mini_batch_size <= train_input.size(0)):
                 output = model(train_input.narrow(0, b*mini_batch_size, mini_batch_size))
                 loss = criterion(output, train_target.narrow(0, b*mini_batch_size, mini_batch_size))
@@ -162,11 +162,11 @@ def compute_nb_errors(model, data_input, data_target, mini_batch_size):
 
 
 
-model = create_model_1d()
+model = create_final_model()
 # best results obtained with a batch_size of 32
 mini_batch_size = 32
 print('Training the model...')
-train_model(model, train_input, train_target, test_input, test_target,mini_batch_size, verbose=True)
+train_model(model, train_input, train_target, test_input, test_target, mini_batch_size)
 print('Model trained. Computing error rate...')
 model.eval()
 nb_test_errors = compute_nb_errors(model, test_input, test_target, mini_batch_size)
@@ -201,26 +201,19 @@ def preprocess_signal(train_input, test_input, train_target, test_target, fs):
     train_labels = train_target.data.numpy()
     test_labels = test_target.data.numpy()
 
-    #bandpass filter between 40 and 400hz
+    #bandpass filter between 40 and 400hz followed by a rectification of the signal.
+    #Then the signal passes through a lowpass filtering to keep only the envelope
+    #of the signal curve.
     for i in range(len(train_data)):
         for j in range(nb_channels):
             train_data[i,j] = butter_bandpass_filter(train_data[i,j], 40,400,fs)
-    for i in range(len(test_data)):
-        for j in range(nb_channels):
-            test_data[i,j] = butter_bandpass_filter(test_data[i,j], 40,400,fs)
-
-    #rectification
-    train_data = np.abs(train_data)
-    test_data = np.abs(test_data)
-
-    #lowpass filtering to maintain only the envelope of signal
-    for i in range(len(train_data)):
-        for j in range(nb_channels):
+            train_data[i,j] = np.abs(train_data[i,j])
             train_data[i,j] = butter_lowpass_filter(train_data[i,j], 20, fs)
     for i in range(len(test_data)):
         for j in range(nb_channels):
-            test_data[i,j] = butter_lowpass_filter(test_data[i,j], 20,fs)
-
+            test_data[i,j] = butter_bandpass_filter(test_data[i,j], 40,400,fs)
+            test_data[i,j] = np.abs(test_data[i,j])
+            test_data[i,j] = butter_lowpass_filter(test_data[i,j], 20, fs)
     return train_data,test_data,train_labels,test_labels
 
 def compute_features(train_data, test_data):
