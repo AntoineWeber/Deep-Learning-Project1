@@ -185,6 +185,15 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 import sklearn
 from scipy.signal import butter, lfilter
 
+# To process the baseline, you should call first preprocess_signal with the loaded data.
+# it will return the same data but preprocessed.
+
+# Once the data is preprocessed, you should call the compute_features function
+# to compute the 3 different features per channel. The resulted matrix per trial 
+# is concatenated into a single vector for train and test.
+
+# then you can simply call LDA or SVM with the outputed vectors from compute_features.
+
 # You should define fs to be 100Hz or 1kHz depending on the used dataset
 def preprocess_signal(train_input, test_input, train_target, test_target, fs):
     train_data = train_input.data.numpy()
@@ -230,29 +239,33 @@ def compute_features(train_data, test_data):
 
     return total_data_train,total_data_test
 
-def perform_LDA(total_data_test, total_data_train, train_labels, test_labels):
+def perform_LDA(total_data_train, total_data_test, train_labels, test_labels):
     LDA = LinearDiscriminantAnalysis()
     trainedLDA = LDA.fit(total_data_train, train_labels)
     score_train = trainedLDA.score(total_data_train, train_labels)
     score_test = trainedLDA.score(total_data_test, test_labels)
 
-    scat1 = plt.bar([1],[score_train])
-    scat2 = plt.bar([2],[score_test])
+    scat1 = plt.bar([1],[score_train*100])
+    scat2 = plt.bar([2],[score_test*100])
     plt.title('Train and Test accuracy for an LDA classifier')
     plt.legend((scat1,scat2),('Train','Test'))
     plt.ylabel('Accuracy [%]')
+    axes = plt.gca()
+    axes.set_ylim([0,100])
 
-def perform_SVM(total_data_test, total_data_train, train_labels, test_labels):
+def perform_SVM(total_data_train, total_data_test, train_labels, test_labels):
     SVMclass = sklearn.svm.SVC(0.9)
     trainedSVM = SVMclass.fit(total_data_train, train_labels)
     score_train = trainedSVM.score(total_data_train, train_labels)
     score_test = trainedSVM.score(total_data_test, test_labels)
 
-    scat1 = plt.bar([1],[score_train])
-    scat2 = plt.bar([2],[score_test])
+    scat1 = plt.bar([1],[score_train*100])
+    scat2 = plt.bar([2],[score_test*100])
     plt.title('Train and Test accuracy for a C-SVM classifier')
     plt.legend((scat1,scat2),('Train','Test'))
     plt.ylabel('Accuracy [%]')
+    axes = plt.gca()
+    axes.set_ylim([0,100])
 
 ###################################################################
 ######### Functions taken from some Stack Overflow posts ##########
